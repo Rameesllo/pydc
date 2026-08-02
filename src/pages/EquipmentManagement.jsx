@@ -39,6 +39,7 @@ export default function EquipmentManagement() {
   const [description, setDescription] = useState("");
   const [totalStock, setTotalStock] = useState(1);
   const [imageUrl, setImageUrl] = useState("");
+  const [album, setAlbum] = useState("pydc_equipment");
 
   const categories = ["Wheelchairs", "Oxygen", "Hospital Beds", "Nebulizers", "Walkers", "Others"];
 
@@ -67,15 +68,25 @@ export default function EquipmentManagement() {
     
     const formData = new FormData();
     formData.append("file", file);
+    const cloudFolder = album?.trim() || "pydc_equipment";
+    formData.append("folder", cloudFolder);
+    formData.append("tags", cloudFolder);
     
     try {
       // Determine if signed or unsigned upload
       if (apiKey && apiSecret) {
         // SIGNED UPLOAD (Web Crypto API signature helper)
         const timestamp = Math.round(new Date().getTime() / 1000).toString();
-        
-        // Compute SHA-1 signature of parameters (only timestamp is required)
-        const msgBuffer = new TextEncoder().encode(`timestamp=${timestamp}${apiSecret}`);
+        const paramsToSign = {
+          folder: cloudFolder,
+          tags: cloudFolder,
+          timestamp,
+        };
+        const signatureBase = Object.keys(paramsToSign)
+          .sort()
+          .map((key) => `${key}=${paramsToSign[key]}`)
+          .join('&');
+        const msgBuffer = new TextEncoder().encode(`${signatureBase}${apiSecret}`);
         const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -130,6 +141,7 @@ export default function EquipmentManagement() {
     setDescription("");
     setTotalStock(1);
     setImageUrl("https://images.unsplash.com/photo-1579684389782-64d84b5e905d?q=80&w=600&auto=format&fit=crop");
+    setAlbum("pydc_equipment");
     setUploadError("");
     setShowAddModal(true);
   };
@@ -141,6 +153,7 @@ export default function EquipmentManagement() {
     setDescription(item.description || "");
     setTotalStock(item.total_stock);
     setImageUrl(item.image_url || "");
+    setAlbum("pydc_equipment");
     setUploadError("");
     setShowEditModal(true);
   };
@@ -429,6 +442,19 @@ export default function EquipmentManagement() {
                   />
                 </div>
 
+                {/* Cloudinary Album / Folder */}
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-2">Cloudinary Album / Folder</label>
+                  <input
+                    type="text"
+                    value={album}
+                    onChange={(e) => setAlbum(e.target.value)}
+                    placeholder="pydc_equipment"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Folder name used in Cloudinary; images upload to this album.</p>
+                </div>
+
                 {/* Image URL & Cloudinary Upload */}
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center">
@@ -449,15 +475,7 @@ export default function EquipmentManagement() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input
-                      type="url"
-                      placeholder="Or enter image link URL..."
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
-                    />
-                    
+                  <div>
                     <div className="relative flex items-center justify-center border border-dashed border-slate-300 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors p-2 text-center cursor-pointer min-h-[38px]">
                       <input 
                         type="file" 
@@ -567,6 +585,19 @@ export default function EquipmentManagement() {
                   />
                 </div>
 
+                {/* Cloudinary Album / Folder */}
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-2">Cloudinary Album / Folder</label>
+                  <input
+                    type="text"
+                    value={album}
+                    onChange={(e) => setAlbum(e.target.value)}
+                    placeholder="pydc_equipment"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Folder name used in Cloudinary; images upload to this album.</p>
+                </div>
+
                 {/* Image URL & Cloudinary Upload */}
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center">
@@ -587,15 +618,7 @@ export default function EquipmentManagement() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input
-                      type="url"
-                      placeholder="Or enter image link URL..."
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
-                    />
-                    
+                  <div>
                     <div className="relative flex items-center justify-center border border-dashed border-slate-300 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors p-2 text-center cursor-pointer min-h-[38px]">
                       <input 
                         type="file" 

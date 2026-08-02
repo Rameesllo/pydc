@@ -10,6 +10,7 @@ import {
   FiActivity,
   FiBell,
   FiHome,
+  FiSettings,
   FiMenu
 } from "react-icons/fi";
 import { useHelpingHands } from "../hooks/useHelpingHands";
@@ -52,7 +53,7 @@ export default function AdminLayout({ children }) {
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans pb-16 md:pb-0">
       
       {/* Desktop Sidebar (Left side) */}
-      <aside className="bg-slate-900 text-slate-300 w-64 shrink-0 flex flex-col justify-between hidden md:flex min-h-screen p-6 sticky top-0 z-40">
+      <aside className="bg-slate-900 text-slate-300 w-64 xl:w-72 shrink-0 flex flex-col justify-between hidden md:flex min-h-screen p-5 md:p-6 sticky top-0 z-40">
         <div>
           {/* Brand header */}
           <div className="flex items-center gap-3 mb-10">
@@ -83,6 +84,9 @@ export default function AdminLayout({ children }) {
             </Link>
             <Link to="/medical/admin/reports" className={navItemClass("/medical/admin/reports")}>
               <FiTrendingUp /> Reports
+            </Link>
+            <Link to="/medical/admin/settings" className={navItemClass("/medical/admin/settings")}>
+              <FiSettings /> Settings
             </Link>
           </nav>
         </div>
@@ -141,13 +145,13 @@ export default function AdminLayout({ children }) {
         </header>
 
         {/* Content Children */}
-        <main className="flex-1 p-6 md:p-10">
+        <main className="flex-1 p-5 md:p-6 lg:p-8 xl:p-10">
           {children}
         </main>
       </div>
 
       {/* Mobile Bottom Navigation (Visible only on mobile/tablet for Admin) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 backdrop-blur-md grid grid-cols-5 md:hidden z-40 shadow-lg px-2 text-slate-400">
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 backdrop-blur-md grid grid-cols-6 md:hidden z-40 shadow-lg px-2 text-slate-400">
         <Link to="/medical/admin/dashboard" className={`${mobileNavClass("/medical/admin/dashboard")} ${isActive("/medical/admin/dashboard") ? 'text-blue-500' : 'text-slate-400'}`}>
           <FiGrid className="text-lg mb-1" />
           <span>Dashboard</span>
@@ -163,6 +167,10 @@ export default function AdminLayout({ children }) {
         <Link to="/medical/admin/reports" className={`${mobileNavClass("/medical/admin/reports")} ${isActive("/medical/admin/reports") ? 'text-blue-500' : 'text-slate-400'}`}>
           <FiTrendingUp className="text-lg mb-1" />
           <span>Reports</span>
+        </Link>
+        <Link to="/medical/admin/settings" className={`${mobileNavClass("/medical/admin/settings")} ${isActive("/medical/admin/settings") ? 'text-blue-500' : 'text-slate-400'}`}>
+          <FiSettings className="text-lg mb-1" />
+          <span>Settings</span>
         </Link>
         <button onClick={handleLogout} className="flex flex-col items-center justify-center py-2 text-[10px] font-bold cursor-pointer text-red-400 hover:text-red-300">
           <FiLogOut className="text-lg mb-1" />

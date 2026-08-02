@@ -25,12 +25,13 @@ export default function PublicLayout({ children }) {
       <header className="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 hidden md:block">
         <div className="max-w-7xl mx-auto px-6 md:px-10 py-4.5 flex items-center justify-between">
           <Link to="/medical" className="flex items-center gap-3">
-            {/* PYDC Trust Logo */}
-            <img
-              src="/pydc_medical_logo.png"
-              alt="PYDC Logo"
-              className="w-10 h-10 object-contain rounded-full"
-            />
+            <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 shadow-sm border border-slate-200 flex items-center justify-center bg-white">
+              <img
+                src="/pydc_medical_logo.png"
+                alt="PYDC Logo"
+                className="w-full h-full object-cover scale-125"
+              />
+            </div>
             <div>
               <h1 className="text-xl font-black text-slate-800 tracking-tight">
                 PYDC <span className="text-blue-600">Charity Trust</span>

@@ -18,6 +18,7 @@ import EquipmentManagement from "./pages/EquipmentManagement";
 import BorrowEquipment from "./pages/BorrowEquipment";
 import ReturnEquipment from "./pages/ReturnEquipment";
 import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 
@@ -66,6 +67,7 @@ function App() {
         <Route path="/medical/admin/borrow" element={<ProtectedRoute><BorrowEquipment /></ProtectedRoute>} />
         <Route path="/medical/admin/return" element={<ProtectedRoute><ReturnEquipment /></ProtectedRoute>} />
         <Route path="/medical/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/medical/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
       </Routes>
     </BrowserRouter>

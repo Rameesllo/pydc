@@ -300,7 +300,7 @@ export default function LandingPage() {
       <footer className="bg-white border-t border-slate-200/80 py-8 text-center text-xs text-slate-400 shrink-0">
         <div className="max-w-7xl mx-auto px-6 space-y-2">
           <p className="font-bold text-slate-700">Helping Hands Charity Trust (Reg. No. NGO-2026-Chennai)</p>
-          <p>Address: Near Central Library, Padiyanallur, Chennai - 600052</p>
+          <p>Address: Near Central Library, Puliyamparambu</p>
           <p className="pt-2">© 2026 PYDC Trust. All rights reserved.</p>
         </div>
       </footer>

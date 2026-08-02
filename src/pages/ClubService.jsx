@@ -590,7 +590,7 @@ export default function ClubService() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 py-6 text-center text-xs text-slate-400 mt-12">
-        <p>© 2026 Padiyanallur Youth Development Club (PYDC). All rights reserved.</p>
+        <p>© 2026 Puliyamparambu Youth Development Center (PYDC). All rights reserved.</p>
       </footer>
     </div>
   );
