@@ -27,11 +27,19 @@ function App() {
   useEffect(() => {
     const envCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const envApiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
+    const envApiSecret = import.meta.env.VITE_CLOUDINARY_API_SECRET;
+    const envUploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
     if (envCloudName && !localStorage.getItem("cloudinary_cloud_name")) {
       localStorage.setItem("cloudinary_cloud_name", envCloudName);
     }
     if (envApiKey && !localStorage.getItem("cloudinary_api_key")) {
       localStorage.setItem("cloudinary_api_key", envApiKey);
+    }
+    if (envApiSecret && !localStorage.getItem("cloudinary_api_secret")) {
+      localStorage.setItem("cloudinary_api_secret", envApiSecret);
+    }
+    if (envUploadPreset && !localStorage.getItem("cloudinary_upload_preset")) {
+      localStorage.setItem("cloudinary_upload_preset", envUploadPreset);
     }
   }, []);
 

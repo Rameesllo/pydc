@@ -1,9 +1,14 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FiHome, FiGrid, FiFileText, FiUser, FiActivity } from "react-icons/fi";
 import { trustInfo } from "../data/helping_hands";
 
 export default function PublicLayout({ children }) {
   const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [location.pathname, location.search]);
 
   const isActive = (path) => {
     if (path === "/medical" && location.pathname === "/medical") return true;
@@ -69,7 +74,7 @@ export default function PublicLayout({ children }) {
           <FiHome className="text-xl mb-1" />
           <span>Home</span>
         </Link>
-        <Link to="/medical/equipment" className={navClass("/medical/equipment")}>
+        <Link to="/medical/equipment" className={navClass("/medical/equipment")}> 
           <FiGrid className="text-xl mb-1" />
           <span>Equipment</span>
         </Link>
@@ -77,7 +82,7 @@ export default function PublicLayout({ children }) {
           <FiFileText className="text-xl mb-1" />
           <span>Request</span>
         </Link>
-        <Link to="/medical/profile" className={navClass("/medical/profile")}>
+        <Link to="/medical/profile" className={navClass("/medical/profile")}> 
           <FiUser className="text-xl mb-1" />
           <span>Profile</span>
         </Link>

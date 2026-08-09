@@ -1,71 +1,122 @@
-import { Link } from "react-router-dom";
-import { FiUser, FiSettings, FiActivity, FiKey, FiMail, FiPhone } from "react-icons/fi";
+import { useEffect, useState } from "react";
 import PublicLayout from "../components/PublicLayout";
-import { useHelpingHands } from "../hooks/useHelpingHands";
+import { FiUser } from "react-icons/fi";
+import { supabase } from "../supabaseClient";
 
 export default function Profile() {
-  const { requests, stats } = useHelpingHands();
+  const [memberSession, setMemberSession] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const savedSession = localStorage.getItem("pydc_member_session");
+    if (savedSession) {
+      try {
+        const parsed = JSON.parse(savedSession);
+        setMemberSession(parsed);
+
+        if (parsed.isMember && parsed.email) {
+          const fetchProfileImage = async () => {
+            const { data, error } = await supabase
+              .from("member_credentials")
+              .select("image_url")
+              .eq("email", parsed.email)
+              .maybeSingle();
+            if (!error && data?.image_url) {
+              setProfileImage(data.image_url);
+            }
+          };
+          fetchProfileImage();
+        }
+      } catch (err) {
+        console.warn("Invalid member session stored", err);
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="flex-1 min-h-screen flex items-center justify-center">
+          <span className="text-sm text-slate-500">Loading profile…</span>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  const session = memberSession || {
+    name: "Guest User",
+    email: "guest@helpinghands.org",
+    role: "Guest Visitor",
+    phone: "+91 0000000000",
+    membershipId: "N/A",
+    isMember: false,
+  };
 
   return (
     <PublicLayout>
       <div className="flex-1 max-w-xl mx-auto px-6 md:px-10 py-12 w-full">
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-8 space-y-8">
-          
-          {/* Avatar Header */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="w-20 h-20 rounded-full bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center text-3xl shadow-sm">
-              🧑‍⚕️
+            <div className="w-24 h-24 rounded-full bg-blue-50 border border-blue-200 overflow-hidden shadow-sm flex items-center justify-center">
+              {profileImage && session.isMember ? (
+                <img src={profileImage} alt="Member" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-blue-600">
+                  <FiUser className="text-3xl" />
+                </div>
+              )}
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-800">Helping Hands Citizen Portal</h3>
-              <p className="text-xs text-slate-400 mt-1">General public account for medical loan management</p>
+              <h3 className="text-xl font-bold text-slate-800">
+                {session.isMember ? "Club Member Profile" : "Guest Profile"}
+              </h3>
+              <p className="text-sm text-slate-500 mt-1">
+                {session.isMember
+                  ? "Logged in club member account details."
+                  : "You are viewing a guest profile. Log in to see club member details."}
+              </p>
             </div>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl text-center">
-              <h4 className="text-xl font-black text-slate-800">{requests.length}</h4>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Total Requests Logged</p>
+          <div className="grid gap-4 text-sm text-slate-600">
+            <div className="rounded-3xl border border-slate-100 p-4 bg-slate-50">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400 font-bold mb-2">Name</p>
+              <p className="font-semibold text-slate-800">{session.name}</p>
             </div>
-            <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl text-center">
-              <h4 className="text-xl font-black text-blue-600">Active</h4>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Loan Status Tracking</p>
-            </div>
-          </div>
 
-          {/* Details list */}
-          <div className="space-y-4 pt-4 border-t border-slate-100 text-sm text-slate-600">
-            <div className="flex items-center gap-3">
-              <FiMail className="text-slate-400" />
-              <span>guest@helpinghands.org</span>
+            <div className="rounded-3xl border border-slate-100 p-4 bg-slate-50">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400 font-bold mb-2">Email</p>
+              <p className="font-semibold text-slate-800">{session.email}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <FiPhone className="text-slate-400" />
-              <span>+91 9876543210</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <FiActivity className="text-slate-400" />
-              <span>Role: Public Guest Account</span>
-            </div>
-          </div>
 
-          {/* Admin panel redirect gate */}
-          <div className="pt-6 border-t border-slate-100">
-            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 text-center space-y-4">
-              <div>
-                <h4 className="text-sm font-bold text-slate-800">Are you a Trust staff member?</h4>
-                <p className="text-slate-500 text-xs mt-1">Log in with your administrator account to manage equipment, returns, and write reports.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-3xl border border-slate-100 p-4 bg-slate-50">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400 font-bold mb-2">Role</p>
+                <p className="font-semibold text-slate-800">{session.role}</p>
               </div>
-              <Link 
-                to="/admin/login"
-                className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all shadow-md shadow-blue-600/10 cursor-pointer"
-              >
-                <FiKey className="text-base" /> Access Administrator Portal
-              </Link>
+              <div className="rounded-3xl border border-slate-100 p-4 bg-slate-50">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400 font-bold mb-2">Phone</p>
+                <p className="font-semibold text-slate-800">{session.phone}</p>
+              </div>
             </div>
+
+            {session.isMember && (
+              <div className="rounded-3xl border border-slate-100 p-4 bg-slate-50">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400 font-bold mb-2">Membership ID</p>
+                <p className="font-semibold text-slate-800">{session.membershipId}</p>
+              </div>
+            )}
           </div>
 
+          <div className="pt-4 border-t border-slate-100 text-slate-500 text-sm">
+            {session.isMember ? (
+              <p>Club members can access their member dashboard and request equipment.</p>
+            ) : (
+              <p>Guest users can browse the site. Please log in to see full member profile details.</p>
+            )}
+          </div>
         </div>
       </div>
     </PublicLayout>
