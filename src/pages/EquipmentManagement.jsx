@@ -45,77 +45,80 @@ export default function EquipmentManagement() {
 
   const handleImageUpload = async (file) => {
     if (!file) return;
-    
-    // Retrieve Cloudinary Config
+
     const cloudName = localStorage.getItem("cloudinary_cloud_name") || import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
     const apiKey = localStorage.getItem("cloudinary_api_key") || import.meta.env.VITE_CLOUDINARY_API_KEY || "";
     const apiSecret = localStorage.getItem("cloudinary_api_secret") || import.meta.env.VITE_CLOUDINARY_API_SECRET || "";
     const uploadPreset = localStorage.getItem("cloudinary_upload_preset") || "";
-    
-    // Require Cloudinary config for shared public image URLs
-    if (!cloudName) {
-      setUploadError("Cloudinary Cloud Name is not configured. Set it in Settings.");
-      return;
-    }
+
+    const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
     setUploading(true);
     setUploadError("");
-    
+
+    const cloudFolder = album?.trim() || "pydc_equipment";
     const formData = new FormData();
     formData.append("file", file);
-    const cloudFolder = album?.trim() || "pydc_equipment";
     formData.append("folder", cloudFolder);
     formData.append("tags", cloudFolder);
-    
+
+    const canUseCloudinary = cloudName && (apiKey && apiSecret || uploadPreset);
+    if (!canUseCloudinary) {
+      try {
+        const base64 = await readFileAsDataUrl(file);
+        setImageUrl(base64);
+        setUploadError("");
+      } catch (err) {
+        console.warn("Base64 conversion failed:", err);
+        setUploadError("Image upload failed: could not convert file. Please use a valid image.");
+        setImageUrl("");
+      } finally {
+        setUploading(false);
+      }
+      return;
+    }
+
     try {
-      // Determine if signed or unsigned upload
       if (apiKey && apiSecret) {
-        // SIGNED UPLOAD (Web Crypto API signature helper)
-        const timestamp = Math.round(new Date().getTime() / 1000).toString();
-        const paramsToSign = {
-          folder: cloudFolder,
-          tags: cloudFolder,
-          timestamp,
-        };
+        const timestamp = Math.round(Date.now() / 1000).toString();
+        const paramsToSign = { folder: cloudFolder, tags: cloudFolder, timestamp };
         const signatureBase = Object.keys(paramsToSign)
           .sort()
           .map((key) => `${key}=${paramsToSign[key]}`)
           .join('&');
-        const msgBuffer = new TextEncoder().encode(`${signatureBase}${apiSecret}`);
-        const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const msgBuffer = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(`${signatureBase}${apiSecret}`));
+        const hashArray = Array.from(new Uint8Array(msgBuffer));
         const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
+
         formData.append("api_key", apiKey);
         formData.append("timestamp", timestamp);
         formData.append("signature", signature);
-      } else if (uploadPreset) {
-        // UNSIGNED UPLOAD
-        formData.append("upload_preset", uploadPreset);
       } else {
-        throw new Error("Neither Cloudinary credentials (API Key/Secret) nor Unsigned Upload Preset are configured in Settings.");
+        formData.append("upload_preset", uploadPreset);
       }
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-      
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData?.error?.message || "Cloudinary API responded with an error.");
       }
-      
+
       const data = await response.json();
-      if (data.secure_url) {
-        setImageUrl(data.secure_url);
-        setUploadError("");
-      } else {
+      if (!data.secure_url) {
         throw new Error("Invalid Cloudinary upload response.");
       }
+
+      setImageUrl(data.secure_url);
+      setUploadError("");
     } catch (err) {
       console.warn("Cloudinary upload failed:", err);
       setUploadError(`Image upload failed: ${err.message}`);
@@ -432,9 +435,9 @@ export default function EquipmentManagement() {
                   />
                 </div>
 
-                {/* Cloudinary Album / Folder */}
+                {/* Image folder / tag */}
                 <div>
-                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-2">Cloudinary Album / Folder</label>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-2">Image folder / tag</label>
                   <input
                     type="text"
                     value={album}
@@ -442,14 +445,14 @@ export default function EquipmentManagement() {
                     placeholder="pydc_equipment"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Folder name used in Cloudinary; images upload to this album.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Optional folder/tag used with hosted image uploads when availableilable.</p>
                 </div>
 
-                {/* Image URL & Cloudinary Upload */}
+                {/* Image URL & Upload */}
                 <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center">
                     <label className="block text-slate-400 font-bold uppercase tracking-wider">Equipment Image</label>
-                    {uploading && <span className="text-[10px] text-blue-600 font-bold animate-pulse">Uploading to Cloudinary...</span>}
+                    {uploading && <span className="text-[10px] text-blue-600 font-bold animate-pulse">Uploading...</span>}
                   </div>
 
                   <div>
@@ -461,7 +464,7 @@ export default function EquipmentManagement() {
                       placeholder="https://example.com/public-image.jpg"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
                     />
-                    <p className="text-[10px] text-slate-400 mt-2">Use a public image URL or upload a file to Cloudinary so the image is visible on all devices.</p>
+                    <p className="text-[10px] text-slate-400 mt-2">Use a public image URL or upload a file so the image is visible on all devices.</p>
                   </div>
 
                   {imageUrl && (
@@ -478,7 +481,7 @@ export default function EquipmentManagement() {
                   )}
 
                   <div>
-                    <div className="relative flex items-center justify-center border border-dashed border-slate-300 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors p-2 text-center cursor-pointer min-h-[38px]">
+                    <div className="relative flex items-center justify-center border border-dashed border-slate-300 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors p-2 text-center cursor-pointer min-h-9.5">
                       <input 
                         type="file" 
                         accept="image/*"
@@ -587,9 +590,9 @@ export default function EquipmentManagement() {
                   />
                 </div>
 
-                {/* Cloudinary Album / Folder */}
+                {/* Image folder / tag */}
                 <div>
-                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-2">Cloudinary Album / Folder</label>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-2">Image folder / tag</label>
                   <input
                     type="text"
                     value={album}
@@ -597,14 +600,14 @@ export default function EquipmentManagement() {
                     placeholder="pydc_equipment"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Folder name used in Cloudinary; images upload to this album.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Optional folder/tag used with hosted image uploads when available.</p>
                 </div>
 
-                {/* Image URL & Cloudinary Upload */}
+                {/* Image URL & Upload */}
                 <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center">
                     <label className="block text-slate-400 font-bold uppercase tracking-wider">Equipment Image</label>
-                    {uploading && <span className="text-[10px] text-blue-600 font-bold animate-pulse">Uploading to Cloudinary...</span>}
+                    {uploading && <span className="text-[10px] text-blue-600 font-bold animate-pulse">Uploading image...</span>}
                   </div>
 
                   <div>
@@ -616,7 +619,7 @@ export default function EquipmentManagement() {
                       placeholder="https://example.com/public-image.jpg"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
                     />
-                    <p className="text-[10px] text-slate-400 mt-2">Use a public image URL or upload a file to Cloudinary so the image is visible on all devices.</p>
+                    <p className="text-[10px] text-slate-400 mt-2">Use a public image URL or upload a file so the image is visible on all devices.</p>
                   </div>
 
                   {imageUrl && (
@@ -633,7 +636,7 @@ export default function EquipmentManagement() {
                   )}
 
                   <div>
-                    <div className="relative flex items-center justify-center border border-dashed border-slate-300 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors p-2 text-center cursor-pointer min-h-[38px]">
+                    <div className="relative flex items-center justify-center border border-dashed border-slate-300 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors p-2 text-center cursor-pointer min-h-9.5">
                       <input 
                         type="file" 
                         accept="image/*"

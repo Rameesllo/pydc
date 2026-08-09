@@ -118,13 +118,30 @@ export default function CommitteeMembers() {
     const apiSecret = localStorage.getItem("cloudinary_api_secret") || import.meta.env.VITE_CLOUDINARY_API_SECRET || "";
     const uploadPreset = localStorage.getItem("cloudinary_upload_preset") || "";
 
-    if (!cloudName) {
-      setUploadError("Cloudinary cloud name is not configured.");
-      return;
-    }
+    const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
     setUploading(true);
     setUploadError("");
+
+    const canUseCloudinary = cloudName && (apiKey && apiSecret || uploadPreset);
+    if (!canUseCloudinary) {
+      try {
+        const base64 = await readFileAsDataUrl(file);
+        handleUpdateCommitteeMember(id, "imageUrl", base64);
+        setUploadError("");
+      } catch (err) {
+        console.warn("Committee image conversion failed:", err);
+        setUploadError("Image upload failed: could not convert file to a usable image.");
+      } finally {
+        setUploading(false);
+      }
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -151,10 +168,8 @@ export default function CommitteeMembers() {
         formData.append("api_key", apiKey);
         formData.append("timestamp", timestamp);
         formData.append("signature", signature);
-      } else if (uploadPreset) {
-        formData.append("upload_preset", uploadPreset);
       } else {
-        throw new Error("Cloudinary credentials or upload preset are not configured.");
+        formData.append("upload_preset", uploadPreset);
       }
 
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -301,7 +316,7 @@ export default function CommitteeMembers() {
                     <p className="text-[10px] text-slate-400 mt-2">Use a public image URL so the profile shows on all devices.</p>
 
                     <div className="mt-3">
-                      <label className="block text-[10px] font-bold uppercase text-slate-400 mb-2">Upload File to Cloudinary</label>
+                      <label className="block text-[10px] font-bold uppercase text-slate-400 mb-2">Upload Image File</label>
                       <input
                         type="file"
                         accept="image/*"
@@ -310,7 +325,7 @@ export default function CommitteeMembers() {
                         className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 transition-colors"
                       />
                       {uploading && (
-                        <p className="text-[10px] text-blue-600 mt-2">Uploading image to Cloudinary...</p>
+                        <p className="text-[10px] text-blue-600 mt-2">Uploading image...</p>
                       )}
                       {uploadError && (
                         <p className="text-[10px] text-red-600 mt-2">{uploadError}</p>

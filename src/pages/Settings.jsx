@@ -44,22 +44,7 @@ export default function Settings() {
   ];
   const [memberCredentials, setMemberCredentials] = useState(defaultMemberCredentials);
   const [activeSection, setActiveSection] = useState('committee'); // 'committee' or 'members'
-  const [cloudinaryCloudName, setCloudinaryCloudName] = useState("");
-  const [cloudinaryApiKey, setCloudinaryApiKey] = useState("");
-  const [cloudinaryApiSecret, setCloudinaryApiSecret] = useState("");
-  const [cloudinaryUploadPreset, setCloudinaryUploadPreset] = useState("");
-  const [settingsError, setSettingsError] = useState("");
 
-  useEffect(() => {
-    const storedCloudName = localStorage.getItem("cloudinary_cloud_name") || import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
-    const storedApiKey = localStorage.getItem("cloudinary_api_key") || import.meta.env.VITE_CLOUDINARY_API_KEY || "";
-    const storedApiSecret = localStorage.getItem("cloudinary_api_secret") || import.meta.env.VITE_CLOUDINARY_API_SECRET || "";
-    const storedUploadPreset = localStorage.getItem("cloudinary_upload_preset") || import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "";
-    setCloudinaryCloudName(storedCloudName);
-    setCloudinaryApiKey(storedApiKey);
-    setCloudinaryApiSecret(storedApiSecret);
-    setCloudinaryUploadPreset(storedUploadPreset);
-  }, []);
 
   useEffect(() => {
     const storedCreds = localStorage.getItem("pydc_member_credentials");
@@ -124,13 +109,37 @@ export default function Settings() {
   };
   const handleCommitteeImageUpload = async (id, file) => {
     if (!file) return;
+
     const cloudName = localStorage.getItem("cloudinary_cloud_name") || import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
     const apiKey = localStorage.getItem("cloudinary_api_key") || import.meta.env.VITE_CLOUDINARY_API_KEY || "";
     const apiSecret = localStorage.getItem("cloudinary_api_secret") || import.meta.env.VITE_CLOUDINARY_API_SECRET || "";
     const uploadPreset = localStorage.getItem("cloudinary_upload_preset") || "";
-    if (!cloudName) { setUploadError("Cloudinary cloud name is not configured. Please set it in Settings."); return; }
+    const canUseCloudinary = cloudName && ((apiKey && apiSecret) || uploadPreset);
+
+    const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
     setUploading(true);
     setUploadError("");
+
+    if (!canUseCloudinary) {
+      try {
+        const base64 = await readFileAsDataUrl(file);
+        handleUpdateCommitteeMember(id, "imageUrl", base64);
+        setUploadError("");
+      } catch (err) {
+        console.warn("Committee image conversion failed:", err);
+        setUploadError("Image upload failed: could not convert file to a usable image.");
+      } finally {
+        setUploading(false);
+      }
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -147,11 +156,10 @@ export default function Settings() {
         formData.append("api_key", apiKey);
         formData.append("timestamp", timestamp);
         formData.append("signature", signature);
-      } else if (uploadPreset) {
-        formData.append("upload_preset", uploadPreset);
       } else {
-        throw new Error("Cloudinary credentials or upload preset are not configured.");
+        formData.append("upload_preset", uploadPreset);
       }
+
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok || !data.secure_url) {
@@ -212,30 +220,6 @@ export default function Settings() {
     setTimeout(() => setToastMessage(""), 4000);
   };
 
-  const handleSaveCloudinaryConfig = (e) => {
-    e.preventDefault();
-    if (!cloudinaryCloudName.trim()) {
-      setSettingsError("Cloudinary cloud name is required.");
-      return;
-    }
-
-    const setValue = (key, value) => {
-      if (value.trim()) {
-        localStorage.setItem(key, value.trim());
-      } else {
-        localStorage.removeItem(key);
-      }
-    };
-
-    setValue("cloudinary_cloud_name", cloudinaryCloudName);
-    setValue("cloudinary_api_key", cloudinaryApiKey);
-    setValue("cloudinary_api_secret", cloudinaryApiSecret);
-    setValue("cloudinary_upload_preset", cloudinaryUploadPreset);
-    setSettingsError("");
-    setToastMessage("Cloudinary settings saved.");
-    setTimeout(() => setToastMessage(""), 4000);
-  };
-
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [toastMessage, setToastMessage] = useState("");
@@ -288,12 +272,6 @@ export default function Settings() {
             onClick={() => setActiveSection('members')}
           >
             Assign Member Logins
-          </button>
-          <button
-            className={`text-left px-3 py-2 rounded ${activeSection === 'cloudinary' ? 'bg-cyan-100 text-cyan-800' : 'bg-white text-slate-800'} transition`}
-            onClick={() => setActiveSection('cloudinary')}
-          >
-            Cloudinary Settings
           </button>
         </nav>
 
@@ -393,7 +371,7 @@ export default function Settings() {
                         />
                         <p className="text-[10px] text-slate-400 mt-2">Use a public image URL so the profile shows on all devices.</p>
                         <div className="mt-3">
-                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-2">Upload File to Cloudinary</label>
+                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-2">Upload image file</label>
                           <input
                             type="file"
                             accept="image/*"
@@ -401,7 +379,7 @@ export default function Settings() {
                             onChange={e => handleCommitteeImageUpload(member.id, e.target.files?.[0])}
                             className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 transition-colors"
                           />
-                          {uploading && <p className="text-[10px] text-blue-600 mt-2">Uploading image to Cloudinary...</p>}
+                          {uploading && <p className="text-[10px] text-blue-600 mt-2">Uploading image...</p>}
                           {uploadError && <p className="text-[10px] text-red-600 mt-2">{uploadError}</p>}
                         </div>
                       </div>
@@ -536,77 +514,6 @@ export default function Settings() {
             </div>
           )}
 
-          {activeSection === 'cloudinary' && (
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-3xl p-6 md:p-8">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center shrink-0">
-                    <FiActivity className="text-xl" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-800">Cloudinary Settings</h3>
-                    <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mt-0.5">Save Cloudinary values so uploads work across devices</p>
-                  </div>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveCloudinaryConfig} className="space-y-6">
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-400 mb-2">Cloudinary Cloud Name</label>
-                    <input
-                      type="text"
-                      value={cloudinaryCloudName}
-                      onChange={e => setCloudinaryCloudName(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 transition-colors"
-                      placeholder="e.g. your-cloud-name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-400 mb-2">Cloudinary API Key</label>
-                    <input
-                      type="text"
-                      value={cloudinaryApiKey}
-                      onChange={e => setCloudinaryApiKey(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 transition-colors"
-                      placeholder="Optional for signed uploads"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-400 mb-2">Cloudinary API Secret</label>
-                    <input
-                      type="password"
-                      value={cloudinaryApiSecret}
-                      onChange={e => setCloudinaryApiSecret(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 transition-colors"
-                      placeholder="Optional for signed uploads"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-400 mb-2">Cloudinary Upload Preset</label>
-                    <input
-                      type="text"
-                      value={cloudinaryUploadPreset}
-                      onChange={e => setCloudinaryUploadPreset(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 transition-colors"
-                      placeholder="Optional for unsigned uploads"
-                    />
-                    <p className="text-[10px] text-slate-400 mt-2">Use upload preset when API key/secret are not stored in the browser.</p>
-                  </div>
-                </div>
-                {settingsError && <p className="text-[10px] text-red-600">{settingsError}</p>}
-                <div className="flex justify-end mt-4">
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl cursor-pointer text-sm transition-colors"
-                  >
-                    Save Cloudinary Settings
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
         </div>
       </div>
     </AdminLayout>
