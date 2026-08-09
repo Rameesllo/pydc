@@ -1,0 +1,23 @@
+{
+  "short_name": "PYDC Center",
+  "name": "Puliyamparambu Youth Development Center",
+  "description": "Public welfare services and medical equipment center portal",
+  "icons": [
+    {
+      "src": "pydc_medical_logo.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "pydc_medical_logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "display": "standalone",
+  "orientation": "portrait"
+}

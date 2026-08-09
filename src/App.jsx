@@ -1,11 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Portal from "./pages/Portal";
-import Home from "./pages/Home";
-import Books from "./pages/Books";
-import BookDetails from "./pages/BookDetails";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import LandingPage from "./pages/LandingPage";
 import EquipmentList from "./pages/EquipmentList";
 import EquipmentDetails from "./pages/EquipmentDetails";
@@ -19,40 +14,41 @@ import BorrowEquipment from "./pages/BorrowEquipment";
 import ReturnEquipment from "./pages/ReturnEquipment";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import ComingSoon from "./pages/ComingSoon";
+import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 
-// Initialize Cloudinary credentials from .env to localStorage on first load
-function initCloudinaryConfig() {
-  const envCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const envApiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
-  const envApiSecret = import.meta.env.VITE_CLOUDINARY_API_SECRET;
-  if (envCloudName && !localStorage.getItem("cloudinary_cloud_name")) {
-    localStorage.setItem("cloudinary_cloud_name", envCloudName);
-  }
-  if (envApiKey && !localStorage.getItem("cloudinary_api_key")) {
-    localStorage.setItem("cloudinary_api_key", envApiKey);
-  }
-  if (envApiSecret && !localStorage.getItem("cloudinary_api_secret")) {
-    localStorage.setItem("cloudinary_api_secret", envApiSecret);
-  }
-}
-initCloudinaryConfig();
-
+import MemberLogin from "./pages/MemberLogin";
+import MemberProfile from "./pages/MemberProfile";
 
 function App() {
+  // Initialize Cloudinary public config on first mount (no secrets in frontend)
+  useEffect(() => {
+    const envCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const envApiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
+    if (envCloudName && !localStorage.getItem("cloudinary_cloud_name")) {
+      localStorage.setItem("cloudinary_cloud_name", envCloudName);
+    }
+    if (envApiKey && !localStorage.getItem("cloudinary_api_key")) {
+      localStorage.setItem("cloudinary_api_key", envApiKey);
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
         {/* Root Portal Hub */}
         <Route path="/" element={<Portal />} />
+        <Route path="/member-login" element={<MemberLogin />} />
+        <Route path="/member/profile" element={<MemberProfile />} />
 
         {/* Library Subsystem Routes */}
-        <Route path="/library" element={<Home />} />
-        <Route path="/library/books" element={<Books />} />
-        <Route path="/library/book/:id" element={<BookDetails />} />
-        <Route path="/library/login" element={<Login />} />
-        <Route path="/library/dashboard" element={<Dashboard />} />
+        <Route path="/library" element={<ComingSoon />} />
+        <Route path="/library/books" element={<ComingSoon />} />
+        <Route path="/library/book/:id" element={<ComingSoon />} />
+        <Route path="/library/login" element={<ComingSoon />} />
+        <Route path="/library/dashboard" element={<ComingSoon />} />
 
         {/* Medical Equipment Subsystem Routes */}
         <Route path="/medical" element={<LandingPage />} />
@@ -61,13 +57,20 @@ function App() {
         <Route path="/medical/request" element={<RequestEquipment />} />
         <Route path="/medical/my-requests" element={<MyRequests />} />
         <Route path="/medical/profile" element={<Profile />} />
-        <Route path="/medical/admin/login" element={<AdminLogin />} />
-        <Route path="/medical/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/medical/admin/equipment" element={<ProtectedRoute><EquipmentManagement /></ProtectedRoute>} />
-        <Route path="/medical/admin/borrow" element={<ProtectedRoute><BorrowEquipment /></ProtectedRoute>} />
-        <Route path="/medical/admin/return" element={<ProtectedRoute><ReturnEquipment /></ProtectedRoute>} />
-        <Route path="/medical/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-        <Route path="/medical/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        {/* Admin Portal Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/equipment" element={<ProtectedRoute><EquipmentManagement /></ProtectedRoute>} />
+        <Route path="/admin/borrow" element={<ProtectedRoute><BorrowEquipment /></ProtectedRoute>} />
+        <Route path="/admin/return" element={<ProtectedRoute><ReturnEquipment /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+        {/* Backward Compatibility Redirects */}
+        <Route path="/medical/admin/*" element={<AdminLogin />} />
+
+        {/* 404 Catch-All */}
+        <Route path="*" element={<NotFound />} />
 
       </Routes>
     </BrowserRouter>

@@ -271,7 +271,7 @@ export default function AdminDashboard() {
                   <h3 className="text-base font-bold text-slate-800">Recent Borrow Records</h3>
                   <p className="text-xs text-slate-400 mt-0.5">Active equipment rentals history</p>
                 </div>
-                <Link to="/medical/admin/borrow" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                <Link to="/admin/borrow" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                   New Entry <FiArrowRight />
                 </Link>
               </div>
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="mt-6 pt-4 border-t border-slate-100">
-              <Link to="/medical/admin/return" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1.5">
+              <Link to="/admin/return" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1.5">
                 Manage Asset Returns & History <FiArrowRight />
               </Link>
             </div>

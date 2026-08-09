@@ -58,7 +58,7 @@ export default function Profile() {
                 <p className="text-slate-500 text-xs mt-1">Log in with your administrator account to manage equipment, returns, and write reports.</p>
               </div>
               <Link 
-                to="/medical/admin/login"
+                to="/admin/login"
                 className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all shadow-md shadow-blue-600/10 cursor-pointer"
               >
                 <FiKey className="text-base" /> Access Administrator Portal

@@ -51,7 +51,7 @@ export default function PublicLayout({ children }) {
             <Link to="/medical/profile" className="p-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-xl text-slate-600 hover:text-blue-600 transition-all">
               <FiUser className="text-lg" />
             </Link>
-            <Link to="/medical/admin/login" className="btn-primary py-2 px-5 text-sm font-semibold cursor-pointer">
+            <Link to="/admin/login" className="btn-primary py-2 px-5 text-sm font-semibold cursor-pointer">
               Admin Login
             </Link>
           </div>

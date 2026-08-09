@@ -52,14 +52,9 @@ export default function EquipmentManagement() {
     const apiSecret = localStorage.getItem("cloudinary_api_secret") || import.meta.env.VITE_CLOUDINARY_API_SECRET || "";
     const uploadPreset = localStorage.getItem("cloudinary_upload_preset") || "";
     
-    // Fallback if not configured
+    // Require Cloudinary config for shared public image URLs
     if (!cloudName) {
       setUploadError("Cloudinary Cloud Name is not configured. Set it in Settings.");
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
       return;
     }
 
@@ -122,14 +117,9 @@ export default function EquipmentManagement() {
         throw new Error("Invalid Cloudinary upload response.");
       }
     } catch (err) {
-      console.warn("Cloudinary upload failed, using local preview fallback:", err);
-      setUploadError(`Using local image preview (Upload failed: ${err.message})`);
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
+      console.warn("Cloudinary upload failed:", err);
+      setUploadError(`Image upload failed: ${err.message}`);
+      setImageUrl("");
     } finally {
       setUploading(false);
     }
@@ -456,12 +446,24 @@ export default function EquipmentManagement() {
                 </div>
 
                 {/* Image URL & Cloudinary Upload */}
-                <div className="space-y-2 text-xs">
+                <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center">
                     <label className="block text-slate-400 font-bold uppercase tracking-wider">Equipment Image</label>
                     {uploading && <span className="text-[10px] text-blue-600 font-bold animate-pulse">Uploading to Cloudinary...</span>}
                   </div>
-                  
+
+                  <div>
+                    <label className="block text-slate-400 font-bold uppercase tracking-wider mb-2">Image URL</label>
+                    <input
+                      type="url"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://example.com/public-image.jpg"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-2">Use a public image URL or upload a file to Cloudinary so the image is visible on all devices.</p>
+                  </div>
+
                   {imageUrl && (
                     <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-sm mb-2 group shrink-0">
                       <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available'; }} />
@@ -599,12 +601,24 @@ export default function EquipmentManagement() {
                 </div>
 
                 {/* Image URL & Cloudinary Upload */}
-                <div className="space-y-2 text-xs">
+                <div className="space-y-3 text-xs">
                   <div className="flex justify-between items-center">
                     <label className="block text-slate-400 font-bold uppercase tracking-wider">Equipment Image</label>
                     {uploading && <span className="text-[10px] text-blue-600 font-bold animate-pulse">Uploading to Cloudinary...</span>}
                   </div>
-                  
+
+                  <div>
+                    <label className="block text-slate-400 font-bold uppercase tracking-wider mb-2">Image URL</label>
+                    <input
+                      type="url"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://example.com/public-image.jpg"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-2">Use a public image URL or upload a file to Cloudinary so the image is visible on all devices.</p>
+                  </div>
+
                   {imageUrl && (
                     <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-sm mb-2 group shrink-0">
                       <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available'; }} />

@@ -24,7 +24,7 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     const session = localStorage.getItem("admin_session");
     if (!session) {
-      navigate("/medical/admin/login");
+      navigate("/admin/login");
     }
   }, [navigate]);
 
@@ -70,22 +70,22 @@ export default function AdminLayout({ children }) {
 
           {/* Navigation Links */}
           <nav className="space-y-1.5">
-            <Link to="/medical/admin/dashboard" className={navItemClass("/medical/admin/dashboard")}>
+            <Link to="/admin/dashboard" className={navItemClass("/admin/dashboard")}>
               <FiGrid /> Dashboard
             </Link>
-            <Link to="/medical/admin/equipment" className={navItemClass("/medical/admin/equipment")}>
+            <Link to="/admin/equipment" className={navItemClass("/admin/equipment")}>
               <FiArchive /> Inventory
             </Link>
-            <Link to="/medical/admin/borrow" className={navItemClass("/medical/admin/borrow")}>
+            <Link to="/admin/borrow" className={navItemClass("/admin/borrow")}>
               <FiFilePlus /> Borrow Entry
             </Link>
-            <Link to="/medical/admin/return" className={navItemClass("/medical/admin/return")}>
+            <Link to="/admin/return" className={navItemClass("/admin/return")}>
               <FiCornerDownLeft /> Returns
             </Link>
-            <Link to="/medical/admin/reports" className={navItemClass("/medical/admin/reports")}>
+            <Link to="/admin/reports" className={navItemClass("/admin/reports")}>
               <FiTrendingUp /> Reports
             </Link>
-            <Link to="/medical/admin/settings" className={navItemClass("/medical/admin/settings")}>
+            <Link to="/admin/settings" className={navItemClass("/admin/settings")}>
               <FiSettings /> Settings
             </Link>
           </nav>
@@ -152,23 +152,23 @@ export default function AdminLayout({ children }) {
 
       {/* Mobile Bottom Navigation (Visible only on mobile/tablet for Admin) */}
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 backdrop-blur-md grid grid-cols-6 md:hidden z-40 shadow-lg px-2 text-slate-400">
-        <Link to="/medical/admin/dashboard" className={`${mobileNavClass("/medical/admin/dashboard")} ${isActive("/medical/admin/dashboard") ? 'text-blue-500' : 'text-slate-400'}`}>
+        <Link to="/admin/dashboard" className={`${mobileNavClass("/admin/dashboard")} ${isActive("/admin/dashboard") ? 'text-blue-500' : 'text-slate-400'}`}>
           <FiGrid className="text-lg mb-1" />
           <span>Dashboard</span>
         </Link>
-        <Link to="/medical/admin/equipment" className={`${mobileNavClass("/medical/admin/equipment")} ${isActive("/medical/admin/equipment") ? 'text-blue-500' : 'text-slate-400'}`}>
+        <Link to="/admin/equipment" className={`${mobileNavClass("/admin/equipment")} ${isActive("/admin/equipment") ? 'text-blue-500' : 'text-slate-400'}`}>
           <FiArchive className="text-lg mb-1" />
           <span>Inventory</span>
         </Link>
-        <Link to="/medical/admin/borrow" className={`${mobileNavClass("/medical/admin/borrow")} ${isActive("/medical/admin/borrow") ? 'text-blue-500' : 'text-slate-400'}`}>
+        <Link to="/admin/borrow" className={`${mobileNavClass("/admin/borrow")} ${isActive("/admin/borrow") ? 'text-blue-500' : 'text-slate-400'}`}>
           <FiFilePlus className="text-lg mb-1" />
           <span>Borrow</span>
         </Link>
-        <Link to="/medical/admin/reports" className={`${mobileNavClass("/medical/admin/reports")} ${isActive("/medical/admin/reports") ? 'text-blue-500' : 'text-slate-400'}`}>
+        <Link to="/admin/reports" className={`${mobileNavClass("/admin/reports")} ${isActive("/admin/reports") ? 'text-blue-500' : 'text-slate-400'}`}>
           <FiTrendingUp className="text-lg mb-1" />
           <span>Reports</span>
         </Link>
-        <Link to="/medical/admin/settings" className={`${mobileNavClass("/medical/admin/settings")} ${isActive("/medical/admin/settings") ? 'text-blue-500' : 'text-slate-400'}`}>
+        <Link to="/admin/settings" className={`${mobileNavClass("/admin/settings")} ${isActive("/admin/settings") ? 'text-blue-500' : 'text-slate-400'}`}>
           <FiSettings className="text-lg mb-1" />
           <span>Settings</span>
         </Link>

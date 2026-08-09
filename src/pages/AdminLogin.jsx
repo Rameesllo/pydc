@@ -13,7 +13,7 @@ export default function AdminLogin() {
   useEffect(() => {
     const session = localStorage.getItem("admin_session");
     if (session) {
-      navigate("/medical/admin/dashboard");
+      navigate("/admin/dashboard");
     }
   }, [navigate]);
 
@@ -26,9 +26,9 @@ export default function AdminLogin() {
     setTimeout(() => {
       if (email === "pydc@gmail.com" && password === "123456") {
         localStorage.setItem("admin_session", "true");
-        navigate("/medical/admin/dashboard");
+        navigate("/admin/dashboard");
       } else {
-        setError("Invalid email or password. Use: pydc@gmail.com / 123456");
+        setError("Invalid email or password. Please try again.");
         setSubmitting(false);
       }
     }, 800);

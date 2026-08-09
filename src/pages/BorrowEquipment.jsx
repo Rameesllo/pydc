@@ -223,7 +223,7 @@ export default function BorrowEquipment() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/medical/admin/dashboard")}
+                onClick={() => navigate("/admin/dashboard")}
                 className="px-6 py-3.5 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl font-semibold cursor-pointer"
               >
                 Cancel
