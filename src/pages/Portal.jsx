@@ -157,7 +157,7 @@ export default function Portal() {
       }
 
       try {
-        const { data, error } = await supabase.from("members").select("*").order("id", { ascending: true });
+        const { data, error } = await supabase.from("committee_members").select("*").order("id", { ascending: true });
         if (error) throw error;
         if (Array.isArray(data) && data.length > 0) {
           setCommitteeMembers(data.map((member) => ({

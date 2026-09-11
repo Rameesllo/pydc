@@ -8,6 +8,8 @@ export default function MemberProfile() {
   const navigate = useNavigate();
   const [memberSession, setMemberSession] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
+  const [pendingImage, setPendingImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
@@ -46,14 +48,29 @@ export default function MemberProfile() {
     }
   }, [navigate]);
 
-  const handleImageUpload = async (e) => {
+  useEffect(() => () => {
+    if (previewImage) URL.revokeObjectURL(previewImage);
+  }, [previewImage]);
+
+  const handleImageSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const nextPreview = URL.createObjectURL(file);
+    setPendingImage(file);
+    setPreviewImage((currentPreview) => {
+      if (currentPreview) URL.revokeObjectURL(currentPreview);
+      return nextPreview;
+    });
+    e.target.value = "";
+  };
+
+  const handleSaveProfileImage = async () => {
+    if (!pendingImage || !memberSession?.email) return;
     setSaving(true);
     const previousImageUrl = profileImage;
     let uploadedImageUrl = null;
     try {
-      const imageUrl = await uploadImage(file, "profiles");
+      const imageUrl = await uploadImage(pendingImage, "profiles");
       uploadedImageUrl = imageUrl;
       const { error } = await supabase
         .from("member_credentials")
@@ -64,6 +81,8 @@ export default function MemberProfile() {
       if (previousImageUrl && previousImageUrl !== imageUrl) {
         await deleteImage(previousImageUrl);
       }
+      setPendingImage(null);
+      setPreviewImage(null);
       setToast("Profile photo updated successfully!");
     } catch (err) {
       if (uploadedImageUrl) await deleteImage(uploadedImageUrl);
@@ -115,8 +134,8 @@ export default function MemberProfile() {
           {/* Avatar Area */}
           <div className="relative w-28 h-28 mx-auto group">
             <div className="w-full h-full rounded-full border-[3px] border-slate-200 shadow-md overflow-hidden bg-slate-100 flex items-center justify-center">
-              {profileImage ? (
-                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+              {previewImage || profileImage ? (
+                <img src={previewImage || profileImage} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <FiUser className="text-4xl text-slate-400" />
               )}
@@ -134,10 +153,21 @@ export default function MemberProfile() {
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              onChange={handleImageUpload}
+              onChange={handleImageSelect}
               className="hidden"
             />
           </div>
+
+          {pendingImage && (
+            <button
+              type="button"
+              onClick={handleSaveProfileImage}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl px-5 py-2.5 shadow-md transition-colors disabled:opacity-60"
+            >
+              <FiSave /> {saving ? "Saving photo..." : "Save Profile Photo"}
+            </button>
+          )}
 
           <div>
             <h2 className="text-xl font-black text-slate-800">{memberSession.name}</h2>

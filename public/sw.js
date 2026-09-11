@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pydc-cache-v1';
+const CACHE_NAME = 'pydc-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -33,8 +33,12 @@ self.addEventListener('activate', (e) => {
 // Fetch Event (Network-first fallback to Cache)
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    fetch(e.request).catch(() => {
-      return caches.match(e.request);
+    fetch(e.request).catch(async () => {
+      const cachedResponse = await caches.match(e.request);
+      return cachedResponse || new Response('Offline', {
+        status: 503,
+        statusText: 'Offline'
+      });
     })
   );
 });

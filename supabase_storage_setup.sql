@@ -28,3 +28,8 @@ DROP POLICY IF EXISTS "Authenticated delete pydc images" ON storage.objects;
 CREATE POLICY "Authenticated delete pydc images"
 ON storage.objects FOR DELETE TO authenticated
 USING (bucket_id = 'pydc-images');
+
+
+
+
+ 

@@ -58,7 +58,7 @@ export default function CommitteeMembers() {
       }
 
       try {
-        const { data, error } = await supabase.from("members").select("*").order("id", { ascending: true });
+        const { data, error } = await supabase.from("committee_members").select("*").order("id", { ascending: true });
         if (error) throw error;
         if (Array.isArray(data) && data.length > 0) {
           setCommitteeMembers(data.map((member) => ({
@@ -146,7 +146,7 @@ export default function CommitteeMembers() {
     }));
 
     try {
-      const { error } = await supabase.from("members").upsert(payload, { onConflict: "id" });
+      const { error } = await supabase.from("committee_members").upsert(payload, { onConflict: "id" });
       if (error) throw error;
       for (const oldImageUrl of pendingImageReplacements.current.values()) {
         await deleteImage(oldImageUrl);
@@ -156,8 +156,7 @@ export default function CommitteeMembers() {
       setToastMessage("Committee members updated successfully!");
     } catch (err) {
       console.warn("Failed to save shared committee data", err);
-      localStorage.setItem("pydc_committee_members", JSON.stringify(committeeMembers));
-      setToastMessage("Saved locally only; shared committee storage unavailable.");
+      setToastMessage(`Committee changes were not saved: ${err.message}`);
     } finally {
       setSubmitting(false);
       setTimeout(() => setToastMessage(""), 4000);
