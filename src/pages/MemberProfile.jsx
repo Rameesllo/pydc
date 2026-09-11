@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiUser, FiMail, FiShield, FiCalendar, FiCamera, FiLogOut, FiSave } from "react-icons/fi";
 import { supabase } from "../supabaseClient";
+import { deleteImage, uploadImage } from "../utils/storage";
 
 export default function MemberProfile() {
   const navigate = useNavigate();
@@ -45,34 +46,33 @@ export default function MemberProfile() {
     }
   }, [navigate]);
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be under 2MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result;
-      setProfileImage(base64);
-      setSaving(true);
-      try {
-        const { error } = await supabase
-          .from("member_credentials")
-          .update({ image_url: base64 })
-          .eq("email", memberSession.email);
-        if (error) throw error;
-        setToast("Profile photo updated successfully!");
-      } catch (err) {
-        console.error("Failed to upload photo", err);
-        setToast("Failed to save photo in cloud.");
-      } finally {
-        setSaving(false);
-        setTimeout(() => setToast(""), 4000);
+    setSaving(true);
+    const previousImageUrl = profileImage;
+    let uploadedImageUrl = null;
+    try {
+      const imageUrl = await uploadImage(file, "profiles");
+      uploadedImageUrl = imageUrl;
+      const { error } = await supabase
+        .from("member_credentials")
+        .update({ image_url: imageUrl })
+        .eq("email", memberSession.email);
+      if (error) throw error;
+      setProfileImage(imageUrl);
+      if (previousImageUrl && previousImageUrl !== imageUrl) {
+        await deleteImage(previousImageUrl);
       }
-    };
-    reader.readAsDataURL(file);
+      setToast("Profile photo updated successfully!");
+    } catch (err) {
+      if (uploadedImageUrl) await deleteImage(uploadedImageUrl);
+      console.error("Failed to upload photo", err);
+      setToast("Failed to save photo in cloud.");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setToast(""), 4000);
+    }
   };
 
   const handleLogout = () => {

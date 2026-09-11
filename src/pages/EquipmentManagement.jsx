@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import AdminLayout from "../components/AdminLayout";
 import { useHelpingHands } from "../hooks/useHelpingHands";
+import { uploadImage } from "../utils/storage";
 
 export default function EquipmentManagement() {
   const { 
@@ -29,7 +30,6 @@ export default function EquipmentManagement() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Cloudinary upload states
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
@@ -46,81 +46,14 @@ export default function EquipmentManagement() {
   const handleImageUpload = async (file) => {
     if (!file) return;
 
-    const cloudName = localStorage.getItem("cloudinary_cloud_name") || import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
-    const apiKey = localStorage.getItem("cloudinary_api_key") || import.meta.env.VITE_CLOUDINARY_API_KEY || "";
-    const apiSecret = localStorage.getItem("cloudinary_api_secret") || import.meta.env.VITE_CLOUDINARY_API_SECRET || "";
-    const uploadPreset = localStorage.getItem("cloudinary_upload_preset") || "";
-
-    const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
     setUploading(true);
     setUploadError("");
 
-    const cloudFolder = album?.trim() || "pydc_equipment";
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", cloudFolder);
-    formData.append("tags", cloudFolder);
-
-    const canUseCloudinary = cloudName && (apiKey && apiSecret || uploadPreset);
-    if (!canUseCloudinary) {
-      try {
-        const base64 = await readFileAsDataUrl(file);
-        setImageUrl(base64);
-        setUploadError("");
-      } catch (err) {
-        console.warn("Base64 conversion failed:", err);
-        setUploadError("Image upload failed: could not convert file. Please use a valid image.");
-        setImageUrl("");
-      } finally {
-        setUploading(false);
-      }
-      return;
-    }
-
     try {
-      if (apiKey && apiSecret) {
-        const timestamp = Math.round(Date.now() / 1000).toString();
-        const paramsToSign = { folder: cloudFolder, tags: cloudFolder, timestamp };
-        const signatureBase = Object.keys(paramsToSign)
-          .sort()
-          .map((key) => `${key}=${paramsToSign[key]}`)
-          .join('&');
-        const msgBuffer = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(`${signatureBase}${apiSecret}`));
-        const hashArray = Array.from(new Uint8Array(msgBuffer));
-        const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-        formData.append("api_key", apiKey);
-        formData.append("timestamp", timestamp);
-        formData.append("signature", signature);
-      } else {
-        formData.append("upload_preset", uploadPreset);
-      }
-
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || "Cloudinary API responded with an error.");
-      }
-
-      const data = await response.json();
-      if (!data.secure_url) {
-        throw new Error("Invalid Cloudinary upload response.");
-      }
-
-      setImageUrl(data.secure_url);
+      setImageUrl(await uploadImage(file, album?.trim() || "equipment"));
       setUploadError("");
     } catch (err) {
-      console.warn("Cloudinary upload failed:", err);
+      console.warn("Supabase image upload failed:", err);
       setUploadError(`Image upload failed: ${err.message}`);
       setImageUrl("");
     } finally {
@@ -370,7 +303,7 @@ export default function EquipmentManagement() {
         {/* ADD EQUIPMENT MODAL */}
         {showAddModal && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn font-sans">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden p-8 relative">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[calc(100vh-2rem)] overflow-y-auto p-8 relative">
               <button 
                 onClick={() => setShowAddModal(false)}
                 className="absolute top-4 right-4 bg-slate-100 text-slate-500 hover:bg-slate-200 p-2 rounded-full cursor-pointer transition-colors"
@@ -527,7 +460,7 @@ export default function EquipmentManagement() {
         {/* EDIT EQUIPMENT MODAL */}
         {showEditModal && selectedItem && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn font-sans">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden p-8 relative">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[calc(100vh-2rem)] overflow-y-auto p-8 relative">
               <button 
                 onClick={() => setShowEditModal(false)}
                 className="absolute top-4 right-4 bg-slate-100 text-slate-500 hover:bg-slate-200 p-2 rounded-full cursor-pointer transition-colors"

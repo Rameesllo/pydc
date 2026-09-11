@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
-  FiArrowRight, FiUser, FiMail, FiShield, FiLogOut, FiCamera, FiX, FiShare
+  FiArrowRight, FiUser, FiMail, FiShield, FiLogOut, FiCamera, FiX, FiShare, FiDownload
 } from "react-icons/fi";
 import { supabase } from "../supabaseClient";
+import { deleteImage, uploadImage } from "../utils/storage";
 
 export default function Portal() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -36,6 +37,7 @@ export default function Portal() {
   const [showProfile, setShowProfile] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [showIosPrompt, setShowIosPrompt] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
   const profileRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -49,6 +51,28 @@ export default function Portal() {
       setShowIosPrompt(true);
     }
   }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+    const handleAppInstalled = () => setInstallPrompt(null);
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  };
 
   useEffect(() => {
     // Read persistent member login session
@@ -91,26 +115,26 @@ export default function Portal() {
   const handleProfileImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be under 2MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result;
-      setProfileImage(base64);
-      if (memberSession?.email) {
-        try {
-          await supabase
-            .from("member_credentials")
-            .update({ image_url: base64 })
-            .eq("email", memberSession.email);
-        } catch (dbErr) {
-          console.error("Failed to save profile picture to Supabase", dbErr);
+    if (memberSession?.email) {
+      const previousImageUrl = profileImage;
+      let uploadedImageUrl = null;
+      try {
+        const imageUrl = await uploadImage(file, "profiles");
+        uploadedImageUrl = imageUrl;
+        const { error } = await supabase
+          .from("member_credentials")
+          .update({ image_url: imageUrl })
+          .eq("email", memberSession.email);
+        if (error) throw error;
+        setProfileImage(imageUrl);
+        if (previousImageUrl && previousImageUrl !== imageUrl) {
+          await deleteImage(previousImageUrl);
         }
+      } catch (dbErr) {
+        if (uploadedImageUrl) await deleteImage(uploadedImageUrl);
+        console.error("Failed to save profile picture to Supabase", dbErr);
       }
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleMemberLogout = () => {
@@ -201,6 +225,16 @@ export default function Portal() {
           </div>
 
           <div className="flex items-center gap-2">
+            {installPrompt && (
+              <button
+                onClick={handleInstallApp}
+                className="inline-flex items-center gap-1.5 text-[11px] md:text-xs text-blue-900 font-bold px-3 py-1 rounded-full bg-white hover:bg-blue-50 border border-white/80 transition-all shadow-sm"
+                title="Install PYDC Center"
+              >
+                <FiDownload />
+                <span>Install App</span>
+              </button>
+            )}
             {memberSession && memberSession.isMember ? (
               <div className="relative" ref={profileRef}>
                 {/* Profile Avatar Button */}

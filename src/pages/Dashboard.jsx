@@ -26,6 +26,7 @@ import {
 } from "react-icons/fi";
 import { Line, Pie } from "react-chartjs-2";
 import { supabase } from "../supabaseClient";
+import { uploadImage } from "../utils/storage";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -195,51 +196,19 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  // Handle converting local folder images into Base64 strings with ultra-low-size canvas compression
-  const handleFileChange = (e, isEdit = false) => {
+  const handleFileChange = async (e, isEdit = false) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 200; // Perfect small thumbnail size
-          const MAX_HEIGHT = 280; // Standard book aspect ratio
-          let width = img.width;
-          let height = img.height;
-
-          // Scaled proportion mapping
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Convert canvas image to JPEG with 0.3 quality (extremely low KB, super light!)
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.3);
-          
-          if (isEdit) {
-            setBookToEdit(prev => ({ ...prev, image: compressedBase64 }));
-          } else {
-            setNewBook(prev => ({ ...prev, image: compressedBase64 }));
-          }
-        };
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+      const imageUrl = await uploadImage(file, "books");
+      if (isEdit) {
+        setBookToEdit(prev => ({ ...prev, image: imageUrl }));
+      } else {
+        setNewBook(prev => ({ ...prev, image: imageUrl }));
+      }
+    } catch (err) {
+      console.error("Book cover upload failed", err);
+      alert(`Book cover upload failed: ${err.message}`);
     }
   };
 

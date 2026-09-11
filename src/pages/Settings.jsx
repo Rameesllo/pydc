@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FiActivity, FiUser } from "react-icons/fi";
 import AdminLayout from "../components/AdminLayout";
 import { supabase } from "../supabaseClient";
+import { deleteImage, uploadImage } from "../utils/storage";
 
 export default function Settings() {
   const sectionOptions = [
@@ -44,6 +45,7 @@ export default function Settings() {
   ];
   const [memberCredentials, setMemberCredentials] = useState(defaultMemberCredentials);
   const [activeSection, setActiveSection] = useState('committee'); // 'committee' or 'members'
+  const pendingImageReplacements = useRef(new Map());
 
 
   useEffect(() => {
@@ -110,62 +112,16 @@ export default function Settings() {
   const handleCommitteeImageUpload = async (id, file) => {
     if (!file) return;
 
-    const cloudName = localStorage.getItem("cloudinary_cloud_name") || import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
-    const apiKey = localStorage.getItem("cloudinary_api_key") || import.meta.env.VITE_CLOUDINARY_API_KEY || "";
-    const apiSecret = localStorage.getItem("cloudinary_api_secret") || import.meta.env.VITE_CLOUDINARY_API_SECRET || "";
-    const uploadPreset = localStorage.getItem("cloudinary_upload_preset") || "";
-    const canUseCloudinary = cloudName && ((apiKey && apiSecret) || uploadPreset);
-
-    const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
     setUploading(true);
     setUploadError("");
 
-    if (!canUseCloudinary) {
-      try {
-        const base64 = await readFileAsDataUrl(file);
-        handleUpdateCommitteeMember(id, "imageUrl", base64);
-        setUploadError("");
-      } catch (err) {
-        console.warn("Committee image conversion failed:", err);
-        setUploadError("Image upload failed: could not convert file to a usable image.");
-      } finally {
-        setUploading(false);
-      }
-      return;
-    }
-
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "pydc_committee_images");
-      formData.append("tags", "pydc_committee_images");
-      if (apiKey && apiSecret) {
-        const timestamp = Math.round(Date.now() / 1000).toString();
-        const paramsToSign = { folder: "pydc_committee_images", tags: "pydc_committee_images", timestamp };
-        const signatureBase = Object.keys(paramsToSign).sort().map(k => `${k}=${paramsToSign[k]}`).join("&");
-        const msgBuffer = new TextEncoder().encode(`${signatureBase}${apiSecret}`);
-        const hashBuffer = await crypto.subtle.digest("SHA-1", msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const signature = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-        formData.append("api_key", apiKey);
-        formData.append("timestamp", timestamp);
-        formData.append("signature", signature);
-      } else {
-        formData.append("upload_preset", uploadPreset);
+      const member = committeeMembers.find((item) => item.id === id);
+      const imageUrl = await uploadImage(file, "committee");
+      if (member?.imageUrl && !pendingImageReplacements.current.has(id)) {
+        pendingImageReplacements.current.set(id, member.imageUrl);
       }
-
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: formData });
-      const data = await response.json();
-      if (!response.ok || !data.secure_url) {
-        throw new Error(data.error?.message || "Cloudinary upload failed.");
-      }
-      handleUpdateCommitteeMember(id, "imageUrl", data.secure_url);
+      handleUpdateCommitteeMember(id, "imageUrl", imageUrl);
       setUploadError("");
     } catch (err) {
       setUploadError(err.message || "Upload failed.");
@@ -181,6 +137,10 @@ export default function Settings() {
     try {
       const { error } = await supabase.from("members").upsert(payload, { onConflict: "id" });
       if (error) throw error;
+      for (const oldImageUrl of pendingImageReplacements.current.values()) {
+        await deleteImage(oldImageUrl);
+      }
+      pendingImageReplacements.current.clear();
       localStorage.setItem("pydc_committee_members", JSON.stringify(committeeMembers));
       setToastMessage("Committee members updated successfully!");
     } catch (err) {
